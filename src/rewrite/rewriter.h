@@ -300,6 +300,15 @@ class Rewriter
   /* Normalization */
   Node normalize_commutative(const Node& node);
 
+  /* RARE ---------------------------------------- */
+  /**
+   * Apply the first RARE rule (in order of priority) that matches the given
+   * node, if any.
+   * @param node The node to rewrite, in normal form w.r.t. the built-in rules.
+   * @return The rewritten node, or `node` if no RARE rule applies.
+   */
+  Node rewrite_rare(const Node& node);
+
   /** Associated environment. */
   Env& d_env;
   /** Logger instance */
@@ -308,6 +317,11 @@ class Rewriter
   /** True to enable rewriting, false to only enable operator elimination. */
   uint8_t d_level;
   const bool d_arithmetic;
+  /**
+   * True to apply RARE rewrite rules (option rare-rules), only enabled for
+   * rewrite levels 1 to LEVEL_MAX.
+   */
+  const bool d_rare;
   /** Cache nodes rewritten during rewrite(), maps node to rewritten form. */
   std::unordered_map<Node, Node> d_cache;
   /**
@@ -344,8 +358,10 @@ class Rewriter
     Statistics(util::Statistics& stats, const std::string& prefix);
     util::HistogramStatistic& rewrites;
     util::HistogramStatistic& evals;
+    util::HistogramStatistic& rare_rewrites;
     uint64_t& num_rewrites;
     uint64_t& num_evals;
+    uint64_t& num_rare_rewrites;
   } d_stats;
 };
 

@@ -284,6 +284,11 @@ Options::Options()
                     "rewrite level",
                     "rewrite-level",
                     "rwl"),
+      rare_rules(this,
+                 Option::RARE_RULES,
+                 false,
+                 "apply RARE rewrite rules (requires rewrite level >= 1)",
+                 "rare-rules"),
       // BV: propagation-based local search engine
       prop_nprops(this,
                   Option::PROP_NPROPS,
@@ -915,6 +920,7 @@ Options::data(Option opt)
 
     case Option::BV_SOLVER: return &bv_solver;
     case Option::REWRITE_LEVEL: return &rewrite_level;
+    case Option::RARE_RULES: return &rare_rules;
 
     case Option::PROP_NPROPS: return &prop_nprops;
     case Option::PROP_NUPDATES: return &prop_nupdates;

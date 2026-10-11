@@ -76,6 +76,7 @@ static const std::unordered_map<Option, bzla::option::Option>
         {Option::MEMORY_LIMIT, bzla::option::Option::MEMORY_LIMIT},
         {Option::NTHREADS, bzla::option::Option::NTHREADS},
         {Option::REWRITE_LEVEL, bzla::option::Option::REWRITE_LEVEL},
+        {Option::RARE_RULES, bzla::option::Option::RARE_RULES},
         {Option::PROP_CONST_BITS, bzla::option::Option::PROP_CONST_BITS},
         {Option::PROP_INFER_INEQ_BOUNDS,
          bzla::option::Option::PROP_INEQ_BOUNDS},

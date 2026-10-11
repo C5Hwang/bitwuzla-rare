@@ -35,6 +35,7 @@ enum class Option
 
   BV_SOLVER,      // enum
   REWRITE_LEVEL,  // numeric
+  RARE_RULES,     // bool
   SAT_SOLVER,     // enum
 
   WRITE_AIGER,  // str
@@ -579,6 +580,7 @@ class Options
   OptionStr write_aiger;
   OptionStr write_cnf;
   OptionNumeric rewrite_level;
+  OptionBool rare_rules;
 
   // BV: propagation-based local search engine
   OptionNumeric prop_nprops;

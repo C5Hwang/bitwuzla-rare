@@ -164,6 +164,21 @@ enum ENUM(Option)
    */
   EVALUE(REWRITE_LEVEL),
   /*!
+   * **RARE rewrite rules.**
+   *
+   * Apply the RARE rewrite rules compiled into Bitwuzla in addition to the
+   * built-in rewrite rules. RARE rules are only applied to terms that are not
+   * rewritten by any built-in rule, and only if the rewrite level is at
+   * least 1.
+   *
+   * *Values:*
+   *  - **true**: enable
+   *  - **false**: disable [**default**]
+   *
+   *  @warning This is an expert option to configure rewriting.
+   */
+  EVALUE(RARE_RULES),
+  /*!
    * **Configure the SAT solver engine.**
    *
    * *Values:*

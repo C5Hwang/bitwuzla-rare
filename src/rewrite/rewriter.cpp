@@ -16,6 +16,7 @@
 #include "node/node_ref_vector.h"
 #include "node/node_utils.h"
 #include "node/unordered_node_ref_set.h"
+#include "rewrite/rewrites_rare.h"
 #include "util/logger.h"
 
 #define BZLA_ELIM_KIND_IMPL(name, rule)           \
@@ -81,6 +82,7 @@ Rewriter::Rewriter(Env& env, uint8_t level, const std::string& id)
       d_logger(env.logger()),
       d_level(level),
       d_arithmetic(level == LEVEL_ARITHMETIC),
+      d_rare(env.options().rare_rules() && level >= 1 && level <= LEVEL_MAX),
       d_eval_cache(env.options().rewrite_level() > 0 ? d_cache
                                                      : d_eval_cache_aux),
       d_stats(env.statistics(),
@@ -584,6 +586,12 @@ Rewriter::_rewrite(const Node& node)
     case node::Kind::EXISTS: res = rewrite_exists(n); break;
 
     default: assert(false);
+  }
+
+  // Apply RARE rules only if no built-in rewrite rule applied.
+  if (d_rare && res == n)
+  {
+    res = rewrite_rare(n);
   }
 
   // Normalize again
@@ -2013,6 +2021,27 @@ DONE:
   return res;
 }
 
+Node
+Rewriter::rewrite_rare(const Node& node)
+{
+  RareMatch match;
+  for (RareRuleKind kind : rare_candidates(node))
+  {
+    if (!rare_match(kind, node, match))
+    {
+      continue;
+    }
+    Node res = rare_build(*this, match);
+    if (res != node)
+    {
+      d_stats.rare_rewrites << kind;
+      ++d_stats.num_rare_rewrites;
+    }
+    return res;
+  }
+  return node;
+}
+
 #define CASE(eval) \
   case RewriteRuleKind::eval: out << #eval; break
 
@@ -2332,8 +2361,12 @@ Rewriter::Statistics::Statistics(util::Statistics& stats,
     : rewrites(
           stats.new_or_get_stat<util::HistogramStatistic>(prefix + "rewrite")),
       evals(stats.new_or_get_stat<util::HistogramStatistic>(prefix + "eval")),
+      rare_rewrites(
+          stats.new_or_get_stat<util::HistogramStatistic>(prefix + "rare")),
       num_rewrites(stats.new_or_get_stat<uint64_t>(prefix + "num_rewrites")),
-      num_evals(stats.new_or_get_stat<uint64_t>(prefix + "num_evals"))
+      num_evals(stats.new_or_get_stat<uint64_t>(prefix + "num_evals")),
+      num_rare_rewrites(
+          stats.new_or_get_stat<uint64_t>(prefix + "num_rare_rewrites"))
 {
 }
 

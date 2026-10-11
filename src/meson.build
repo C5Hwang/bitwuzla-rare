@@ -234,6 +234,7 @@ sources = files([
   'rewrite/rewrites_bv_norm.cpp',
   'rewrite/rewrites_core.cpp',
   'rewrite/rewrites_fp.cpp',
+  'rewrite/rewrites_rare.cpp',
   'resource_terminator.cpp',
   'sat/cadical.cpp',
   'sat/cryptominisat.cpp',
