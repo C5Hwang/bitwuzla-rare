@@ -1,5 +1,5 @@
 /*
- * This file is generated from 363 of the 738 RARE rewrite rules (define-rule)
+ * This file is generated from 360 of the 738 RARE rewrite rules (define-rule)
  * in gpt-6-luna.
  * Do not edit by hand.
  */
@@ -805,10 +805,6 @@ const std::vector<TestRewriterRare::Rule> TestRewriterRare::s_rules = {
      "((x0 ?BitVec) (x1 ?BitVec))",
      "(bvadd (bvadd (bvnot (@bv 0 (@bvsize x0))) x0) (bvadd (bvnot x1) (@bv 1 (@bvsize x0))))",
      "(bvadd x0 (bvnot x1))"},
-    {RareRuleKind::BVADD_COMBINE_COMPLEMENTED_PAIR, Guard::NOT_NORMAL,
-     "((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec) (x3 ?BitVec) (x4 ?BitVec))",
-     "(bvadd (bvadd x0 (bvadd x1 (bvadd x2 x3))) (bvadd x4 (@bv 1 (@bvsize x0))))",
-     "(bvadd (bvnot (bvadd (bvnot x0) (bvnot x1))) x2 x3 x4)"},
     {RareRuleKind::BVADD_COMPLEMENTED_NEGATION, Guard::NOT_NORMAL,
      "((x0 ?BitVec) (x1 ?BitVec))",
      "(bvadd x0 (bvadd (@bv 1 (@bvsize x0)) (bvnot (bvashr x1 (@bv 1 (@bvsize x0))))))",
@@ -937,10 +933,6 @@ const std::vector<TestRewriterRare::Rule> TestRewriterRare::s_rules = {
      "((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec) (x3 ?BitVec))",
      "(bvadd (bvnot x0) (bvadd (@bv 1 (@bvsize x0)) (bvand (bvand x1 x2) x3)))",
      "(bvnot (bvadd x0 (bvnot (bvand (bvand x1 x2) x3))))"},
-    {RareRuleKind::BVADD_NOT_COMPLEMENT_SUM, Guard::NOT_NORMAL,
-     "((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec))",
-     "(bvadd (bvadd x0 (bvnot x1)) (bvadd (bvnot x2) (@bv 1 (@bvsize x0))))",
-     "(bvadd x0 (bvnot (bvadd x1 x2)))"},
     {RareRuleKind::BVADD_NOT_SUBTRACT_SIMPLIFICATION, Guard::NOT_NORMAL,
      "((x0 ?BitVec) (x1 ?BitVec))",
      "(bvadd (bvadd (bvadd (bvnot (bvadd (bvnot (@bv 0 (@bvsize x0))) x0)) (@bv 1 (@bvsize x0))) x1) (@bv 1 (@bvsize x0)))",
@@ -1225,10 +1217,6 @@ const std::vector<TestRewriterRare::Rule> TestRewriterRare::s_rules = {
      "((p0 Bool) (x0 ?BitVec) (x1 ?BitVec))",
      "(and (not p0) (not (= (bvadd (bvnot (@bv 0 (@bvsize x0))) x0) x1)))",
      "(and (not p0) (not (= x0 (bvadd x1 (@bv 1 (@bvsize x0))))))"},
-    {RareRuleKind::BV_SUB_VIA_NEGATED_OPERANDS, Guard::NOT_NORMAL,
-     "((x0 ?BitVec) (x1 ?BitVec))",
-     "(bvadd x0 (bvadd (bvnot x1) (@bv 1 (@bvsize x0))))",
-     "(bvnot (bvadd x1 (bvnot x0)))"},
     {RareRuleKind::CANCELLED_ADDEND, Guard::NOT_NORMAL,
      "((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec))",
      "(bvadd x0 (bvadd x1 (bvnot (bvadd x0 x2))))",

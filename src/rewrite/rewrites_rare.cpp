@@ -1,5 +1,5 @@
 /*
- * This file is generated from 363 of the 738 RARE rewrite rules (define-rule)
+ * This file is generated from 360 of the 738 RARE rewrite rules (define-rule)
  * in gpt-6-luna.
  * Do not edit by hand.
  *
@@ -194,6 +194,15 @@
  *   xor-negation-add-all-ones, xor-product-difference, xor-with-negated-sum,
  *   xor-x-and-neg-x, zero-sum-pair-rebalance, zero-sum-to-negated-addition,
  *   zero-test-lowest-set-bit, zero-test-lsb-mask.
+ *
+ * 3 further rules of the rule set are excluded since they rewrite sums
+ * with an increment, e.g., Bitwuzla's normal form of subtraction
+ * (bvadd x (bvadd (bvnot y) 1)), to a bvnot of a sum. The built-in rewrite
+ * rules and preprocessing passes then no longer recognize the subtraction,
+ * which causes timeouts on QF_BV benchmarks that are otherwise solved in
+ * seconds:
+ *   bv-sub-via-negated-operands, bvadd-combine-complemented-pair,
+ *   bvadd-not-complement-sum.
  */
 
 #include "rewrite/rewrites_rare.h"
@@ -5359,88 +5368,6 @@ build_bvadd_collapse_all_ones(Rewriter& rewriter, const Node* vars)
   return t2;
 }
 
-// (define-rule bvadd-combine-complemented-pair
-//     ((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec) (x3 ?BitVec) (x4 ?BitVec))
-//   (bvadd (bvadd x0 (bvadd x1 (bvadd x2 x3))) (bvadd x4 (@bv 1 (@bvsize x0))))
-//   (bvadd (bvnot (bvadd (bvnot x0) (bvnot x1))) x2 x3 x4))
-//
-// Only applied to terms of bit-width >= 2 since the built-in rewrite rules
-// rewrite the result of the rule (and its match pattern) at bit-width 1.
-bool
-match_bvadd_combine_complemented_pair(const Node& node, Node* vars)
-{
-  if (node.kind() != Kind::BV_ADD)
-  {
-    return false;
-  }
-  // The result is not in normal form for bit-width 1.
-  if (node.type().bv_size() < 2)
-  {
-    return false;
-  }
-  for (size_t i1 = 0; i1 < 2; ++i1)
-  {
-    const Node& n2 = node[i1];
-    const Node& n3 = node[1 - i1];
-    if (n2.kind() != Kind::BV_ADD || n3.kind() != Kind::BV_ADD)
-    {
-      continue;
-    }
-    for (size_t i4 = 0; i4 < 2; ++i4)
-    {
-      const Node& n5 = n2[1 - i4];
-      if (n5.kind() != Kind::BV_ADD)
-      {
-        continue;
-      }
-      const Node& x0 = n2[i4];
-      for (size_t i6 = 0; i6 < 2; ++i6)
-      {
-        const Node& n7 = n5[1 - i6];
-        if (n7.kind() != Kind::BV_ADD)
-        {
-          continue;
-        }
-        const Node& x1 = n5[i6];
-        for (size_t i8 = 0; i8 < 2; ++i8)
-        {
-          const Node& x2 = n7[i8];
-          const Node& x3 = n7[1 - i8];
-          for (size_t i9 = 0; i9 < 2; ++i9)
-          {
-            const Node& n10 = n3[1 - i9];
-            if (!is_one(n10))
-            {
-              continue;
-            }
-            const Node& x4 = n3[i9];
-            vars[0]        = x0;
-            vars[1]        = x1;
-            vars[2]        = x2;
-            vars[3]        = x3;
-            vars[4]        = x4;
-            return true;
-          }
-        }
-      }
-    }
-  }
-  return false;
-}
-
-Node
-build_bvadd_combine_complemented_pair(Rewriter& rewriter, const Node* vars)
-{
-  Node t1 = rewriter.mk_node(Kind::BV_NOT, {vars[0]});
-  Node t2 = rewriter.mk_node(Kind::BV_NOT, {vars[1]});
-  Node t3 = rewriter.mk_node(Kind::BV_ADD, {t1, t2});
-  Node t4 = rewriter.mk_node(Kind::BV_NOT, {t3});
-  Node t5 = rewriter.mk_node(Kind::BV_ADD, {t4, vars[2]});
-  Node t6 = rewriter.mk_node(Kind::BV_ADD, {t5, vars[3]});
-  Node t7 = rewriter.mk_node(Kind::BV_ADD, {t6, vars[4]});
-  return t7;
-}
-
 // (define-rule bvadd-complemented-negation ((x0 ?BitVec) (x1 ?BitVec))
 //   (bvadd x0
 //     (bvadd (@bv 1 (@bvsize x0)) (bvnot (bvashr x1 (@bv 1 (@bvsize x0))))))
@@ -7798,70 +7725,6 @@ build_bvadd_not_and_to_not_sum(Rewriter& rewriter, const Node* vars)
   Node t4 = rewriter.mk_node(Kind::BV_ADD, {vars[0], t3});
   Node t5 = rewriter.mk_node(Kind::BV_NOT, {t4});
   return t5;
-}
-
-// (define-rule bvadd-not-complement-sum
-//     ((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec))
-//   (bvadd (bvadd x0 (bvnot x1)) (bvadd (bvnot x2) (@bv 1 (@bvsize x0))))
-//   (bvadd x0 (bvnot (bvadd x1 x2))))
-//
-// Only applied to terms of bit-width >= 2 since the built-in rewrite rules
-// rewrite the result of the rule (and its match pattern) at bit-width 1.
-bool
-match_bvadd_not_complement_sum(const Node& node, Node* vars)
-{
-  if (node.kind() != Kind::BV_ADD)
-  {
-    return false;
-  }
-  // The result is not in normal form for bit-width 1.
-  if (node.type().bv_size() < 2)
-  {
-    return false;
-  }
-  for (size_t i1 = 0; i1 < 2; ++i1)
-  {
-    const Node& n2 = node[i1];
-    const Node& n3 = node[1 - i1];
-    if (n2.kind() != Kind::BV_ADD || n3.kind() != Kind::BV_ADD)
-    {
-      continue;
-    }
-    for (size_t i4 = 0; i4 < 2; ++i4)
-    {
-      const Node& n5 = n2[1 - i4];
-      if (n5.kind() != Kind::BV_NOT)
-      {
-        continue;
-      }
-      const Node& x0 = n2[i4];
-      const Node& x1 = n5[0];
-      for (size_t i6 = 0; i6 < 2; ++i6)
-      {
-        const Node& n7 = n3[i6];
-        const Node& n8 = n3[1 - i6];
-        if (n7.kind() != Kind::BV_NOT || !is_one(n8))
-        {
-          continue;
-        }
-        const Node& x2 = n7[0];
-        vars[0]        = x0;
-        vars[1]        = x1;
-        vars[2]        = x2;
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-Node
-build_bvadd_not_complement_sum(Rewriter& rewriter, const Node* vars)
-{
-  Node t1 = rewriter.mk_node(Kind::BV_ADD, {vars[1], vars[2]});
-  Node t2 = rewriter.mk_node(Kind::BV_NOT, {t1});
-  Node t3 = rewriter.mk_node(Kind::BV_ADD, {vars[0], t2});
-  return t3;
 }
 
 // (define-rule bvadd-not-subtract-simplification ((x0 ?BitVec) (x1 ?BitVec))
@@ -13064,58 +12927,6 @@ build_bv_sub_increment_equivalence(Rewriter& rewriter, const Node* vars)
   Node t5         = rewriter.mk_node(Kind::NOT, {t4});
   Node t6         = rewriter.mk_node(Kind::AND, {t1, t5});
   return t6;
-}
-
-// (define-rule bv-sub-via-negated-operands ((x0 ?BitVec) (x1 ?BitVec))
-//   (bvadd x0 (bvadd (bvnot x1) (@bv 1 (@bvsize x0))))
-//   (bvnot (bvadd x1 (bvnot x0))))
-//
-// Only applied to terms of bit-width >= 2 since the built-in rewrite rules
-// rewrite the result of the rule (and its match pattern) at bit-width 1.
-bool
-match_bv_sub_via_negated_operands(const Node& node, Node* vars)
-{
-  if (node.kind() != Kind::BV_ADD)
-  {
-    return false;
-  }
-  // The result is not in normal form for bit-width 1.
-  if (node.type().bv_size() < 2)
-  {
-    return false;
-  }
-  for (size_t i1 = 0; i1 < 2; ++i1)
-  {
-    const Node& n2 = node[1 - i1];
-    if (n2.kind() != Kind::BV_ADD)
-    {
-      continue;
-    }
-    const Node& x0 = node[i1];
-    for (size_t i3 = 0; i3 < 2; ++i3)
-    {
-      const Node& n4 = n2[i3];
-      const Node& n5 = n2[1 - i3];
-      if (n4.kind() != Kind::BV_NOT || !is_one(n5))
-      {
-        continue;
-      }
-      const Node& x1 = n4[0];
-      vars[0]        = x0;
-      vars[1]        = x1;
-      return true;
-    }
-  }
-  return false;
-}
-
-Node
-build_bv_sub_via_negated_operands(Rewriter& rewriter, const Node* vars)
-{
-  Node t1 = rewriter.mk_node(Kind::BV_NOT, {vars[0]});
-  Node t2 = rewriter.mk_node(Kind::BV_ADD, {vars[1], t1});
-  Node t3 = rewriter.mk_node(Kind::BV_NOT, {t2});
-  return t3;
 }
 
 // (define-rule cancelled-addend ((x0 ?BitVec) (x1 ?BitVec) (x2 ?BitVec))
@@ -28028,13 +27839,6 @@ const RuleInfo s_rules[] = {
      true,
      match_bvadd_collapse_all_ones,
      build_bvadd_collapse_all_ones},
-    {"bvadd-combine-complemented-pair",
-     Kind::BV_ADD,
-     Kind::BV_ADD,
-     Kind::BV_ADD,
-     true,
-     match_bvadd_combine_complemented_pair,
-     build_bvadd_combine_complemented_pair},
     {"bvadd-complemented-negation",
      Kind::BV_ADD,
      Kind::NULL_NODE,
@@ -28259,13 +28063,6 @@ const RuleInfo s_rules[] = {
      true,
      match_bvadd_not_and_to_not_sum,
      build_bvadd_not_and_to_not_sum},
-    {"bvadd-not-complement-sum",
-     Kind::BV_ADD,
-     Kind::BV_ADD,
-     Kind::BV_ADD,
-     true,
-     match_bvadd_not_complement_sum,
-     build_bvadd_not_complement_sum},
     {"bvadd-not-subtract-simplification",
      Kind::BV_ADD,
      Kind::BV_ADD,
@@ -28763,13 +28560,6 @@ const RuleInfo s_rules[] = {
      true,
      match_bv_sub_increment_equivalence,
      build_bv_sub_increment_equivalence},
-    {"bv-sub-via-negated-operands",
-     Kind::BV_ADD,
-     Kind::NULL_NODE,
-     Kind::BV_ADD,
-     true,
-     match_bv_sub_via_negated_operands,
-     build_bv_sub_via_negated_operands},
     {"cancelled-addend",
      Kind::BV_ADD,
      Kind::NULL_NODE,
@@ -30235,7 +30025,6 @@ const RareRuleKind s_priority[] = {
     RareRuleKind::XOR_MASK_COMBINE,
     RareRuleKind::ADD_ONE_VIA_COMPLEMENTED_SUM,
     RareRuleKind::BV_COMPLEMENT_PLUS_X_TO_INCREMENT,
-    RareRuleKind::BVADD_COMBINE_COMPLEMENTED_PAIR,
     RareRuleKind::BVADD_ONE_AS_COMPLEMENT,
     RareRuleKind::BVNOT_ZERO_PLUS_X_EQUALS_SUCCESSOR,
     RareRuleKind::FACTOR_COMMON_BIT_VECTOR_MULTIPLICAND,
@@ -30374,7 +30163,6 @@ const RareRuleKind s_priority[] = {
     RareRuleKind::BVADD_NEG_ONE_PLUS_ONE_2,
     RareRuleKind::BVADD_NEG_ONE_PLUS_ONE_CANCELLATION,
     RareRuleKind::BVADD_NEGATED_ZERO_CANCEL,
-    RareRuleKind::BVADD_NOT_COMPLEMENT_SUM,
     RareRuleKind::BVADD_NOT_SUM,
     RareRuleKind::BVADD_ONE_EQUALS_BITWISE_DIFFERENCE,
     RareRuleKind::BVAND_CLEAR_BITS,
@@ -30458,7 +30246,6 @@ const RareRuleKind s_priority[] = {
     RareRuleKind::ZERO_AFTER_LEFT_SHIFT,
     RareRuleKind::ASHR_COMPLEMENT_NEGATED_INPUT,
     RareRuleKind::ADD_NOT_SUM_CANCEL,
-    RareRuleKind::BV_SUB_VIA_NEGATED_OPERANDS,
     RareRuleKind::BVNOT_ADD_PLUS_ONE,
     RareRuleKind::BVNOT_ZERO_ADD_INVERSE,
     RareRuleKind::SUBTRACTION_VIA_COMPLEMENTED_ADDITION,
